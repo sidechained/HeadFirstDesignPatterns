@@ -1,7 +1,25 @@
 // Head First Design Patterns
 // Chapter 4: Using the 'factory' design pattern
-// - Pizza Store example
 
+// a. Factory Method Pattern
+// - defines an interface for creating an object, but lets subclasses decide which class to instantiate
+// - lets a class defer instantiation to subclasses
+
+// Design principle: Depend on abstractions. Do not depend on concrete classes
+
+// Pizza Store example (v2):
+
+// in v1: Factory Method for Creating Regional Pizza Stores
+// - the abstract creator provides an interface with a 'factory method' for creating objects
+// - any other methods in the abstract creator will operate on products produced by the factory method
+// - the abstract creator class is written without knowledge of the actual products that will be created
+// - instead, subclasses of the abstract creator are responsible for implementing the factory method and creating products
+
+// in v2: Abstract Factory for Creating Families of Pizza Ingredients
+// - abstract factory provides a means of creating a family of ingredients for pizzas
+// - decouples code from the actual factory that creates the products
+// - allows a variety of factories for different contexts e.g. regional difference
+// - definition: The Abstract Factory Pattern: "provides an interface for creating families of related or dependent objects without specifying their concrete classes"
 /*
 
 PizzaTestDrive.new;"";
@@ -32,8 +50,17 @@ NewYorkStylePizzaStore : PizzaStore {
 	createPizza {arg type;
 		// factory method
 		// creates own style of pizza
+		var pizza, ingredientFactory;
+		ingredientFactory = NewYorkPizzaIngredientFactory.new;
 		^case
-		{type == \cheese} { NewYorkStyleCheesePizza.new }
+		{type == \cheese} {
+			pizza = CheesePizza(ingredientFactory);
+			pizza.setName("New York Style Cheese Pizza");
+		}
+		{type == \clam} {
+			pizza = ClamPizza(ingredientFactory);
+			pizza.setName("New York Style Clam Pizza");
+		}
 	}
 
 }
@@ -45,8 +72,17 @@ ChicagoStylePizzaStore : PizzaStore {
 	createPizza {arg type;
 		// factory method
 		// creates own style of pizza
+		var pizza, ingredientFactory;
+		ingredientFactory = ChicagoPizzaIngredientFactory.new;
 		^case
-		{type == \cheese} { ChicagoStyleCheesePizza.new }
+		{type == \cheese} {
+			pizza = CheesePizza(ingredientFactory);
+			pizza.setName("Chicago Style Cheese Pizza");
+		}
+		{type == \clam} {
+			pizza = ClamPizza(ingredientFactory);
+			pizza.setName("Chicago Style Clam Pizza");
+		}
 	}
 
 }
@@ -55,22 +91,10 @@ Pizza {
 
 	// abstract product
 
-	var name, dough, sauce, toppings;
-
-	*new {
-		^super.new.initPizza
-	}
-
-	initPizza {
-		// init class has a unique name here (if just called init it will get called from other classes)
-		toppings = Array.new;
-	}
+	var name, dough, sauce, veggies, cheese, pepperoni, clam;
 
 	prepare {
-		("Preparing " ++ name).postln;
-		("Tossing dough").postln;
-		("Adding sauce").postln;
-		("Adding toppings: " ++ toppings.asString.drop(2).drop(-2)).postln;
+
 	}
 
 	bake {
@@ -85,50 +109,177 @@ Pizza {
 		("Placing pizza in official PizzaStore box").postln;
 	}
 
+	setName {arg argName;
+		name = argName;
+	}
+
 	getName {
 		^name;
 	}
 }
 
-NewYorkStyleCheesePizza : Pizza {
+CheesePizza : Pizza {
 
-	// concrete product
+	// concrete product?
+	var ingredientFactory;
 
-	*new {
-		^super.new.initNewYorkStyleCheesePizza
+	*new {arg argIngredientFactory;
+		^super.new.initCheesePizza(argIngredientFactory);
 	}
 
-	initNewYorkStyleCheesePizza {
-		// init class has a unique name here (if just called init it will get called from other classes)
-		name = "NY Style Sauce and Cheese Pizza";
-		dough = "Thin Crust Dough";
-		sauce = "Marinara Sauce";
-		toppings = toppings.add("Grated Reggiano Cheese");
+	initCheesePizza {arg argIngredientFactory;
+		ingredientFactory = argIngredientFactory;
+	}
+
+	prepare {
+		// veggies missing
+		("Preparing " ++ name).postln;
+		dough = ingredientFactory.createDough;
+		("Using dough: " ++ dough).postln;
+		sauce = ingredientFactory.createSauce;
+		("Using sauce: " ++ sauce).postln;
+		cheese = ingredientFactory.createCheese;
+		("Using cheese: " ++ cheese).postln;
+	}
+
+}
+
+ClamPizza : Pizza {
+
+	// concrete product?
+	var ingredientFactory;
+
+	*new {arg argIngredientFactory;
+		^super.new.initClamPizza(argIngredientFactory);
+	}
+
+	initClamPizza {arg argIngredientFactory;
+		ingredientFactory = argIngredientFactory;
+	}
+
+	prepare {
+		// veggies missing
+		("Preparing " ++ name).postln;
+		dough = ingredientFactory.createDough;
+		("Using dough: " ++ dough).postln;
+		sauce = ingredientFactory.createSauce;
+		("Using sauce: " ++ sauce).postln;
+		cheese = ingredientFactory.createCheese;
+		("Using cheese: " ++ cheese).postln;
+		clam = ingredientFactory.createClam;
+		("Using clam: " ++ clam).postln;
 	}
 
 }
 
-ChicagoStyleCheesePizza : Pizza {
+// // ingredient factory
 
-	// concrete product
+PizzaIngredientFactory {
 
-	*new {
-		^super.new.initChicagoStyleCheesePizza
+	// abstract factory
+
+	// do we need these methods? they show what is being overridden, but that's all
+	createDough {}
+	createSauce {}
+	createCheese {}
+	createVeggies {}
+	createPepperoni {}
+	createClam {}
+
+}
+
+NewYorkPizzaIngredientFactory : PizzaIngredientFactory {
+
+	// concrete factory
+
+	createDough {
+		^ThinCrustDough.new;
 	}
 
-	initChicagoStyleCheesePizza {
-		// init class has a unique name here (if just called init it will get called from other classes)
-		name = "Chicago Style Deep Dish Pizza";
-		dough = "Extra Thick Crust Dough";
-		sauce = "Plum Tomato Sauce";
-		toppings = toppings.add("Shredded Mozzarella Cheese");
+	createSauce {
+		^MarinaraSauce.new;
 	}
 
-	cut {
-		("Cutting the pizza into square slices").postln;
+	createCheese {
+		^ReggianoCheese.new;
+	}
+
+	createVeggies {
+		^[Garlic.new, Onion.new, Mushroom.new, RedPepper.new];
+	}
+
+	createPepperoni {
+		^SlicedPepperoni.new;
+	}
+
+	createClam {
+		^FreshClams.new;
 	}
 
 }
+
+ChicagoPizzaIngredientFactory : PizzaIngredientFactory {
+
+	// concrete factory
+
+	createDough {
+		^ThickCrustDough.new;
+	}
+
+	createSauce {
+		^PlumTomatoSauce.new;
+	}
+
+	createCheese {
+		^MozzarellaCheese.new;
+	}
+
+	createVeggies {
+		^[Spinach.new, Eggplant.new, BlackOlives.new];
+	}
+
+	createPepperoni {
+		^SlicedPepperoni.new;
+	}
+
+	createClam {
+		^FrozenClams.new;
+	}
+}
+
+// // ingredients
+
+// chicago ingredients
+
+FrozenClams {}
+
+PlumTomatoSauce {}
+
+ThickCrustDough {}
+
+MozzarellaCheese {}
+
+// new york ingredients
+
+FreshClams {}
+
+MarinaraSauce {}
+
+ThinCrustDough {}
+
+ReggianoCheese {}
+
+// california ingredients
+
+Camari {}
+
+BruschettaSauce {}
+
+VeryThinCrust {}
+
+GoatCheese {}
+
+// test class
 
 PizzaTestDrive {
 
@@ -138,15 +289,15 @@ PizzaTestDrive {
 	}
 
 	*orderForEthan {
-		var newYorkPizzaStore = NewYorkStylePizzaStore.new;
-		var pizza = newYorkPizzaStore.orderPizza(\cheese);
+		var newYorkStylePizzaStore = NewYorkStylePizzaStore.new;
+		var pizza = newYorkStylePizzaStore.orderPizza(\cheese);
 		("Ethan ordered a " ++ pizza.getName).postln;
 		Char.nl.postln;
 	}
 
 	*orderForJoel {
-		var chicagoPizzaStore = ChicagoStylePizzaStore.new;
-		var pizza = chicagoPizzaStore.orderPizza(\cheese);
+		var chicagoStylePizzaStore = ChicagoStylePizzaStore.new;
+		var pizza = chicagoStylePizzaStore.orderPizza(\clam);
 		("Joel ordered a " ++ pizza.getName).postln;
 		Char.nl.postln;
 	}
