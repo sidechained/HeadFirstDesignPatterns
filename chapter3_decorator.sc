@@ -3,6 +3,7 @@
 // Using the 'decorator' design pattern
 // - Starbuzz coffee example
 // - Using decorators to add up different combinations of coffee orders (base coffee type + extras)
+// - v2 adds a size variable to each base coffee type and extra (doesn't work)
 
 /* Test Code:
 
@@ -14,16 +15,19 @@ Beverage {
 
 	// an abstract component
 
-	var description = "Unknown Beverage";
-	var cost;
+	var description = "Unknown Beverage", cost, size;
 
 	getDescription {
 		^description
 	}
 
-/*	cost {
+	setSize {arg argSize;
+		size = argSize;
+	}
 
-	}*/
+	getSize {
+		^size
+	}
 
 }
 
@@ -32,35 +36,20 @@ Espresso : Beverage {
 	// a concrete component
 	// extends beverage as HouseBlend is a kind of beverage
 
-	*new {
-		^super.new.init;
+	*new {arg argSize;
+		^super.new.init(argSize);
 	}
 
-	init {
-		description = "Espresso"; // description instance variable inherited from Beverage
-	}
-
-	cost {
-		^1.99
-	}
-
-}
-
-HouseBlend : Beverage {
-
-	// a concrete component
-	// extends beverage as HouseBlend is a kind of beverage
-
-	*new {
-		^super.new.init;
-	}
-
-	init {
-		description = "House Blend"; // description instance variable inherited from Beverage
+	init {arg argSize;
+		this.setSize(argSize);
+		description = (this.getSize.asString + "Espresso"); // description instance variable inherited from Beverage
 	}
 
 	cost {
-		^0.89
+		^case
+		{size == \Tall} { 1.25}
+		{size == \Grande} { 1.50}
+		{size == \Venti} { 1.99}
 	}
 
 }
@@ -70,16 +59,43 @@ DarkRoast : Beverage {
 	// a concrete component
 	// extends beverage as HouseBlend is a kind of beverage
 
-	*new {
-		^super.new.init;
+	*new {arg argSize;
+		^super.new.init(argSize);
 	}
 
-	init {
-		description = "Dark Roast"; // description instance variable inherited from Beverage
+	init {arg argSize;
+		this.setSize(argSize);
+		description = (this.getSize.asString + "Dark Roast"); // description instance variable inherited from Beverage
 	}
 
 	cost {
-		^1.29
+		^case
+		{size == \Tall} { 1.25}
+		{size == \Grande} { 1.50}
+		{size == \Venti} { 1.99}
+	}
+
+}
+
+HouseBlend : Beverage {
+
+	// a concrete component
+	// extends beverage as HouseBlend is a kind of beverage
+
+	*new {arg argSize;
+		^super.new.init(argSize);
+	}
+
+	init {arg argSize;
+		this.setSize(argSize);
+		description = (this.getSize.asString + "House Blend"); // description instance variable inherited from Beverage
+	}
+
+	cost {
+		^case
+		{size == \Tall} { 1.25}
+		{size == \Grande} { 1.50}
+		{size == \Venti} { 1.99}
 	}
 
 }
@@ -89,20 +105,23 @@ Decaf : Beverage {
 	// a concrete component
 	// extends beverage as HouseBlend is a kind of beverage
 
-	*new {
-		^super.new.init;
+	*new {arg argSize;
+		^super.new.init(argSize);
 	}
 
-	init {
-		description = "Decaf"; // description instance variable inherited from Beverage
+	init {arg argSize;
+		this.setSize(argSize);
+		description = (this.getSize.asString + "Espresso"); // description instance variable inherited from Beverage
 	}
 
 	cost {
-		^0.99
+		^case
+		{size == \Tall} { 1.25}
+		{size == \Grande} { 1.50}
+		{size == \Venti} { 1.99}
 	}
 
 }
-
 
 CondimentDecorator : Beverage {
 
@@ -128,12 +147,21 @@ Mocha : CondimentDecorator {
 	}
 
 	getDescription {
-		^beverage.getDescription ++ ", Mocha";
+		^beverage.getDescription + "+ Mocha";
 	}
 
 	cost {
-		^(0.20 + beverage.cost);
+		^(this.calculateCostBySize + beverage.postln.cost);
 	}
+
+	calculateCostBySize {
+		var size = beverage.getSize;
+		^case
+		{size == \Tall} { 0.25 }
+		{size == \Grande} { 0.35 }
+		{size == \Venti} { 0.50 }
+	}
+
 }
 
 Soy : CondimentDecorator {
@@ -151,13 +179,23 @@ Soy : CondimentDecorator {
 	}
 
 	getDescription {
-		^beverage.getDescription ++ ", Soy";
+		^beverage.getDescription + "+ Soy";
 	}
 
 	cost {
-		^(0.25 + beverage.cost);
+		^(this.calculateCostBySize + beverage.cost);
 	}
+
+	calculateCostBySize {
+		var size = beverage.getSize;
+		^case
+		{size == \Tall} { 0.19 }
+		{size == \Grande} { 0.38 }
+		{size == \Venti} { 0.46 }
+	}
+
 }
+
 
 Whip : CondimentDecorator {
 
@@ -174,12 +212,21 @@ Whip : CondimentDecorator {
 	}
 
 	getDescription {
-		^beverage.getDescription ++ ", Whip";
+		^beverage.getDescription + "+ Whip";
 	}
 
 	cost {
-		^(0.32 + beverage.cost);
+		^(this.calculateCostBySize + beverage.cost);
 	}
+
+	calculateCostBySize {
+		var size = beverage.getSize;
+		^case
+		{size == \Tall} { 0.36 }
+		{size == \Grande} { 0.50 }
+		{size == \Venti} { 1.00 }
+	}
+
 }
 
 StarbuzzCoffee {
@@ -191,33 +238,45 @@ StarbuzzCoffee {
 	}
 
 	init {
-		this.orderEspresso;
-		this.orderDarkRoast;
-		this.orderHouseBlend;
+		//this.orderGrandeEspresso;
+		//this.orderVentiEspressoWithMocha;
+		this.orderTallDarkRoastWithDoubleMochaWhip;
+		//this.orderGrandeHouseBlendWithSoyMochaWhip;
 	}
 
-	orderEspresso {
+	orderGrandeEspresso {
 		var beverage;
-		beverage = Espresso.new;
-		(beverage.getDescription ++ " $" ++ beverage.cost).postln;
+		beverage = Espresso.new(\Grande);
+		this.printCost(beverage);
 	}
 
-	orderDarkRoast {
+	orderVentiEspressoWithMocha {
 		var beverage;
-		beverage = DarkRoast.new;
+		beverage = Espresso.new(\Venti);
+		beverage = Mocha.new(beverage);
+		this.printCost(beverage);
+	}
+
+	orderTallDarkRoastWithDoubleMochaWhip {
+		var beverage;
+		beverage = DarkRoast.new(\Tall);
 		beverage = Mocha.new(beverage);
 		beverage = Mocha.new(beverage);
-		beverage = Whip.new(beverage);
-		(beverage.getDescription ++ " $" ++ beverage.cost).postln;
+		//beverage = Whip.new(beverage);
+		this.printCost(beverage);
 	}
 
-	orderHouseBlend {
+	orderGrandeHouseBlendWithSoyMochaWhip {
 		var beverage;
-		beverage = HouseBlend.new;
+		beverage = HouseBlend.new(\Grande);
 		beverage = Soy.new(beverage);
 		beverage = Mocha.new(beverage);
 		beverage = Whip.new(beverage);
-		(beverage.getDescription ++ " $" ++ beverage.cost).postln;
+		this.printCost(beverage);
+	}
+
+	printCost {arg beverage;
+		(beverage.getDescription ++ " $ " ++ beverage.cost).postln;
 	}
 
 }
